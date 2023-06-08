@@ -1,9 +1,10 @@
 import tkinter as tk
 import os
 
+
 # Função para listar os arquivos httpd.conf existentes
 def listar_arquivos():
-    dir_path = "D:\\localhost\\Apache24\\conf"
+    dir_path = ""
 
     try:
         os.chdir(dir_path)
@@ -12,6 +13,7 @@ def listar_arquivos():
     except Exception as e:
         return []
 
+
 # Função para atualizar a lista de arquivos exibidos
 def atualizar_lista():
     listbox.delete(0, tk.END)
@@ -19,6 +21,7 @@ def atualizar_lista():
 
     for file in files:
         listbox.insert(tk.END, file)
+
 
 # Função para preencher as Entry com o nome atual e novo nome do arquivo selecionado
 def preencher_entries(event):
@@ -31,6 +34,7 @@ def preencher_entries(event):
         entry_novo.insert(tk.END, selected_file)
         selected_item_index[0] = selected_index[0]
 
+
 # Função para renomear o arquivo selecionado
 def renomear_arquivo():
     nome_atual = entry_atual.get()
@@ -39,7 +43,7 @@ def renomear_arquivo():
     if selected_item_index[0] is not None:
         selected_index = selected_item_index[0]
         selected_file = listbox.get(selected_index)
-        dir_path = "D:\\localhost\\Apache24\\conf"
+        dir_path = ""
 
         try:
             os.chdir(dir_path)
@@ -54,6 +58,7 @@ def renomear_arquivo():
             status_label["text"] = f"Ocorreu um erro: {str(e)}"
     else:
         status_label["text"] = "Selecione um arquivo para renomear!"
+
 
 # Criação da janela principal
 window = tk.Tk()
