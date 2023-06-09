@@ -1,105 +1,117 @@
-import tkinter as tk
 import os
+import shutil
+import tkinter as tk
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
-# Função para listar os arquivos httpd.conf existentes
-def listar_arquivos():
-    dir_path = os.getenv("APACHE_CONF_DIR")
-
-    try:
-        os.chdir(dir_path)
-        files = [f for f in os.listdir(dir_path) if f.startswith("httpd.conf")]
-        return files
-    except Exception as e:
-        return []
+APACHE_CONF_DIR = os.getenv("APACHE_CONF_DIR")
+ARQUIVO_ATUAL = os.getenv("HTTPD_CONF")
+ARQUIVOS_DISPONIVEIS = os.getenv("ARQUIVOS_DISPONIVEIS").split(",")
 
 
-# Função para atualizar a lista de arquivos exibidos
+def mostrar_mensagem(mensagem):
+    # Adiciona a mensagem ao widget de texto
+    message_display.insert(tk.END, mensagem + "\n")
+    # Rola a visualização para o final para exibir a mensagem mais recente
+    message_display.see(tk.END)
+
+
+def verificar_arquivos_existem():
+    arquivos_ausentes = []
+    # verifica se httpd.conf está presente
+    if not os.path.exists(os.path.join(APACHE_CONF_DIR, ARQUIVO_ATUAL)):
+        arquivos_ausentes.append(ARQUIVO_ATUAL)
+    for arquivo in ARQUIVOS_DISPONIVEIS:
+        if not os.path.exists(os.path.join(APACHE_CONF_DIR, f"httpd.conf.{arquivo}")):
+            arquivos_ausentes.append(arquivo)
+    return len(arquivos_ausentes) == 0, arquivos_ausentes
+
+
+def mostrar_arquivos():
+    return ARQUIVOS_DISPONIVEIS
+
+
+def renomear_arquivo():
+    arquivo_escolhido = listbox.get(tk.ACTIVE)
+    caminho_arquivo = os.path.join(APACHE_CONF_DIR, f"httpd.conf.{arquivo_escolhido}")
+    mostrar_mensagem(f"Arquivo {arquivo_escolhido} selecionado.")
+    # Copiar uma cópia do arquivo escolhido para httpd.conf
+    shutil.copy(caminho_arquivo, os.path.join(APACHE_CONF_DIR, ARQUIVO_ATUAL))
+    # status_text.set(f"Arquivo renomeado para {ARQUIVO_ATUAL}")
+    mostrar_mensagem(f"Arquivo renomeado para {ARQUIVO_ATUAL}")
+
+
+def excluir_arquivo():
+    caminho_arquivo = os.path.join(APACHE_CONF_DIR, ARQUIVO_ATUAL)
+    if os.path.exists(caminho_arquivo):
+        os.remove(caminho_arquivo)
+    # status_text.set(f"Arquivo {caminho_arquivo} excluído")
+    mostrar_mensagem(f"Arquivo {caminho_arquivo} excluído")
+
+
+def configurar_apache():
+    excluir_arquivo()
+    renomear_arquivo()
+
+
 def atualizar_lista():
     listbox.delete(0, tk.END)
-    files = listar_arquivos()
+    for arquivo in ARQUIVOS_DISPONIVEIS:
+        listbox.insert(tk.END, arquivo)
 
-    for file in files:
-        listbox.insert(tk.END, file)
+    status_ok, arquivos_ausentes = verificar_arquivos_existem()
 
-
-# Função para preencher as Entry com o nome atual e novo nome do arquivo selecionado
-def preencher_entries(event):
-    selected_index = listbox.curselection()
-    if selected_index:
-        selected_file = listbox.get(selected_index)
-        entry_atual.delete(0, tk.END)
-        entry_atual.insert(tk.END, selected_file)
-        entry_novo.delete(0, tk.END)
-        entry_novo.insert(tk.END, selected_file)
-        selected_item_index[0] = selected_index[0]
-
-
-# Função para renomear o arquivo selecionado
-def renomear_arquivo():
-    nome_atual = entry_atual.get()
-    nome_novo = entry_novo.get()
-
-    if selected_item_index[0] is not None:
-        selected_index = selected_item_index[0]
-        selected_file = listbox.get(selected_index)
-        dir_path = "APACHE_CONF_DIR"
-
-        try:
-            os.chdir(dir_path)
-
-            os.rename(selected_file, nome_novo)
-            status_label["text"] = f"Arquivo {selected_file} renomeado para {nome_novo} com sucesso!"
-            listbox.delete(selected_index)
-            listbox.insert(selected_index, nome_novo)
-            listbox.selection_set(selected_index)
-
-        except Exception as e:
-            status_label["text"] = f"Ocorreu um erro: {str(e)}"
+    if status_ok:
+        mostrar_mensagem("Todos os arquivos foram encontrados.")
     else:
-        status_label["text"] = "Selecione um arquivo para renomear!"
+        mostrar_mensagem(f"O arquivo {arquivos_ausentes} está faltando.")
+
+
+def limpar_mensagem():
+    message_display.delete(1.0, tk.END)
 
 
 # Criação da janela principal
 window = tk.Tk()
-window.title("Manage Apache Server ")
-window.geometry("400x350")
+window.title("Manage Apache Server")
+window.geometry("400x400")
 
-# Variável para armazenar o índice do item selecionado
-selected_item_index = [None]
 
 # Criação dos elementos da GUI
-label = tk.Label(window, text="Arquivos httpd.conf existentes:")
+label = tk.Label(window, text="MONITOR")
 label.pack()
 
-listbox = tk.Listbox(window)
-listbox.pack()
+# Criação do widget de texto para exibir as mensagens
+message_display = tk.Text(window, height=5, width=100)
+message_display.pack()
 
-label_atual = tk.Label(window, text="Nome atual:")
-label_atual.pack()
+# Criação dos elementos da GUI
+label = tk.Label(window, text="Arquivos httpd.conf Cadastrados")
+label.pack()
 
-entry_atual = tk.Entry(window)
-entry_atual.pack()
+listbox = tk.Listbox(window, height=5, width=20)    # Lista de arquivos
+listbox.pack()                # Adiciona a lista na janela
 
-label_novo = tk.Label(window, text="Novo nome:")
-label_novo.pack()
+status_text = tk.StringVar()    # Variável de texto para o status
+status_label = tk.Label(window, textvariable=status_text)   # Label para o status
+status_label.pack()           # Adiciona o label na janela
 
-entry_novo = tk.Entry(window)
-entry_novo.pack()
+# Atualiza a lista inicial
+atualizar_lista()
 
-listbox.bind("<<ListboxSelect>>", preencher_entries)
 
-button_listar = tk.Button(window, text="Listar Arquivos", command=atualizar_lista)
-button_listar.pack()
+# Criação do botão de atualizar
+button1 = tk.Button(window, text="Atualizar", command=atualizar_lista)
+button1.pack()
 
-button_renomear = tk.Button(window, text="Renomear Arquivo", command=renomear_arquivo)
-button_renomear.pack()
+# Criação do botão de limpar
+button2 = tk.Button(window, text="Limpar", command=limpar_mensagem)
+button2.pack()
 
-status_label = tk.Label(window, text="")
-status_label.pack()
+# Criação do botão de configurar
+button3 = tk.Button(window, text="Configurar", command=configurar_apache)
+button3.pack()
 
-# Loop principal da GUI
+# Inicia o loop principal da janela
 window.mainloop()
