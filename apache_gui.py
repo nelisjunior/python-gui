@@ -1,10 +1,13 @@
 import tkinter as tk
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # Função para listar os arquivos httpd.conf existentes
 def listar_arquivos():
-    dir_path = ""
+    dir_path = os.getenv("APACHE_CONF_DIR")
 
     try:
         os.chdir(dir_path)
@@ -43,7 +46,7 @@ def renomear_arquivo():
     if selected_item_index[0] is not None:
         selected_index = selected_item_index[0]
         selected_file = listbox.get(selected_index)
-        dir_path = ""
+        dir_path = "APACHE_CONF_DIR"
 
         try:
             os.chdir(dir_path)
