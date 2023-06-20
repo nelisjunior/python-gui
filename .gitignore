@@ -137,4 +137,6 @@ config/config.env
 docker-compose.dev.yml
 
 mongodb/
-/.files_manager/
+
+.files_manager/
+
